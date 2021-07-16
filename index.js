@@ -7,26 +7,19 @@ const hostname = '127.0.0.1';
 const port = 8081;
 
 wa.create().then(async (client) => {
-  // backUpContacts(client);
-  // backUpChats(client);
-
-      await client.getAllMessagesInChat("918248505510@c.us", true).then((messages) => {
-        messages.map(async(message)=>{
-          // if (message.mimetype) {
-          //   const filename = `${message.t}.${mime.extension(message.mimetype)}`;
-          //   const mediaData = await wa.decryptMedia(message);
-            
-          //   fs.writeFile(filename, mediaData, function(err) {
-          //     if (err) {
-          //       return console.log(err);
-          //     }
-          //     console.log('The file was saved!');
-          //   });
-          // }
-          console.log(message.content);
-        })
-      })
+  backUpContacts(client);
+  backUpChats(client);
+  backUpMedia(client);
 });
+
+const writeFile = (name, data) => {
+  fs.writeFile(name, data, function (err) {
+    if (err) {
+      return console.log(err);
+    }
+    console.log(`${name} saved!`);
+  });
+}
 
 
 const server = http.createServer((req, res) => {
@@ -35,12 +28,7 @@ const server = http.createServer((req, res) => {
 
 const backUpContacts = async (client) => {
   const contacts = await client.getAllContacts().then((cnts) => { return JSON.stringify(cnts) });
-  fs.writeFile("./backup/contacts.json", contacts, function (err) {
-    if (err) {
-      return console.log(err);
-    }
-    console.log('Contacts saved!');
-  });
+  writeFile("./backup/contacts.json", contacts);
 }
 
 const backUpChats = async (client) => {
@@ -48,12 +36,28 @@ const backUpChats = async (client) => {
     ids.map(async (id) => {
       await client.getAllMessagesInChat(id, true).then((message) => {
         const filename = `./backup/chat/${id}.json`;
-        fs.writeFile(filename, JSON.stringify(message), function (err) {
-          if (err) {
-            return console.log(err);
+        writeFile(filename, JSON.stringify(message));
+      })
+    })
+  });
+}
+
+const backUpMedia = async (client) => {
+  await client.getAllChatIds().then((ids) => {
+    ids.map(async (id) => {
+      await client.getAllMessagesInChat(id, true).then((messages) => {
+        messages.map(async(message)=>{
+          if (message.mimetype) {
+            const filename = `${message.t}.${mime.extension(message.mimetype)}`;
+            let mediaData = await wa.decryptMedia(message).catch((err)=>{
+              if(err.response.status == 404) {
+                mediaData = wa.decryptMedia(client.forceStaleMediaUpdate(message.id));
+                writeFile(filename, mediaData);
+              }
+            })
+          writeFile(filename, mediaData);
           }
-          console.log(`Chat ${id} saved!`);
-        });
+        })
       })
     })
   });
