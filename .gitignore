@@ -1,4 +1,6 @@
 node_modules/
+backup/
+logs/
 
 # managed by open-wa
 **.data.json
