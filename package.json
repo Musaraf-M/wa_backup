@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@open-wa/wa-automate": "^4.11.0",
-    "mime-types": "^2.1.31"
+    "@open-wa/wa-automate": "^4.23.7",
+    "async": "^3.2.2",
+    "mime-types": "^2.1.33"
   }
 }
